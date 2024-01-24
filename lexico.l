@@ -10,11 +10,6 @@ upletter [A-Z]
 lowletter [a-z]
 digit [0-9]
 unary "++"|"--"
-boolean "sim"|"nao"
-id [a-zA-Z][a-zA-Z0-9]*
-whitespace [ ]
-quebra [\n]
-tab [\t]
 
 %%
 

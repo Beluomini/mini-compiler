@@ -1,1 +1,5 @@
-3;
+#incluir <vai.h>
+
+vazio main(){
+    2+3;
+}

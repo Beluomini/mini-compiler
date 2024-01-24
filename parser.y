@@ -55,11 +55,20 @@
 					TOKEN_AND TOKEN_OR 
 					TOKEN_INCLUDE TOKEN_RETURN TOKEN_COMMENT 
 
-%type <nd_obj> 		value arithmetic expression
+%type <nd_obj> 		program headers value arithmetic expression return
 
 %%
 
-expression: expression arithmetic expression { }
+program: headers functions { }
+
+headers: TOKEN_INCLUDE { printf("Header File: %s\n", yytext); }
+;
+
+functions: TOKEN_VOID TOKEN_VAR_ID '(' ')' '{' expression '}' { printf("Function"); }
+| valueType TOKEN_VAR_ID '(' ')' '{' expression return '}' { }
+;
+
+expression: expression arithmetic expression ';' { printf("Arithmetic Expression\n"); }
 | value { }
 ;
 
@@ -69,13 +78,24 @@ arithmetic: TOKEN_ADD
 | TOKEN_DIV
 ;
 
-value: TOKEN_INT_NUM { }
+valueType:	TOKEN_INT { }
+| TOKEN_FLOAT { }
+| TOKEN_CHAR { }
+| TOKEN_STR { }
+| TOKEN_BOOL { }
+;
+
+value: TOKEN_INT_NUM { printf("Integer: %s\n", yytext); }
 | TOKEN_FLOAT_NUM { }
 | TOKEN_CHAR_VAL { }
 | TOKEN_STR_VAL { }
 | TOKEN_TRUE { }
 | TOKEN_FALSE { }
 | TOKEN_VAR_ID { }
+;
+
+return: TOKEN_RETURN value { printf("Return"); }
+| { printf("Return vazio"); }
 ;
 
 %%
@@ -85,7 +105,7 @@ int main() {
     printf("\n\n \t\t\t\t\t\t PHASE 1: LEXICAL ANALYSIS \n\n");
 	printf("\nSYMBOL   DATATYPE   TYPE   LINE NUMBER \n");
 	printf("_______________________________________\n\n");
-	int i=0;
+	/* int i=0;
 	for(i=0; i<count; i++) {
 		printf("%s\t%s\t%s\t%d\t\n", symbolTable[i].id_name, symbolTable[i].data_type, symbolTable[i].type, symbolTable[i].line_no);
 	}
@@ -95,7 +115,7 @@ int main() {
 	}
 	printf("\n\n");
 	printf("\t\t\t\t\t\t PHASE 2: SYNTAX ANALYSIS \n\n");
-	printtree(head); 
+	printtree(head);  */
 	printf("\n\n");
 }
 
