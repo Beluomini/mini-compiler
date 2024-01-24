@@ -1,0 +1,7 @@
+# ignore directori backup and all files inside
+backup/
+
+*.h
+*.c
+*.output
+*.out
