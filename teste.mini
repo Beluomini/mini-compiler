@@ -1,5 +1,13 @@
 #incluir <vai.h>
+#incluir <vorta.h>
+
+inteiro a;
+inteiro b = 1;
+inteiro c = "palhaço";
+palavra d = "limão";
+palavra e = 2;
 
 vazio main(){
-    2+3;
+    palavra dentro = "oi";
+    retorna 1;
 }

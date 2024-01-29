@@ -9,14 +9,14 @@
     int yylex();
     int yywrap();
 
-    void add(char);
-    void insert_type();
-    int search(char *);
-    void insert_type();
-    void printtree(struct node*);
-    void printInorder(struct node *);
+    // void add(char);
+    // void insert_type();
+    // int search(char *);
+    // void insert_type();
+    // void printtree(struct node*);
+    // void printInorder(struct node *);
 
-    struct node* mknode(struct node *left, struct node *right, char *token);
+    // struct node* mknode(struct node *left, struct node *right, char *token);
 
     struct dataType {
         char * id_name;
@@ -37,42 +37,52 @@
     };
 %}
 
-%union { 
+/* %union { 
 	struct var_name { 
 		char name[100]; 
 		struct node* nd;
 	} nd_obj; 
-} 
+}  */
 
-%token TOKEN_VOID 
-%token <nd_obj> 	TOKEN_INT_NUM TOKEN_FLOAT_NUM TOKEN_CHAR_VAL TOKEN_STR_VAL TOKEN_VAR_ID TOKEN_STRUCT_ID
-					TOKEN_INT TOKEN_FLOAT TOKEN_CHAR TOKEN_STR
-					TOKEN_BOOL TOKEN_TRUE TOKEN_FALSE
-					TOKEN_ADD TOKEN_MULT TOKEN_DIV TOKEN_SUB TOKEN_UNARY
-					TOKEN_PRINTF TOKEN_SCANF 
-					TOKEN_FOR TOKEN_WHILE TOKEN_IF TOKEN_ELSE  
-					TOKEN_MENOR_IGUAL TOKEN_MAIOR_IGUAL TOKEN_IGUAL TOKEN_DIFERENTE TOKEN_MAIOR TOKEN_MENOR
-					TOKEN_AND TOKEN_OR 
-					TOKEN_INCLUDE TOKEN_RETURN TOKEN_COMMENT 
+%token  TOKEN_INT_NUM TOKEN_FLOAT_NUM TOKEN_CHAR_VAL TOKEN_STR_VAL TOKEN_VAR_ID TOKEN_STRUCT_ID
+		TOKEN_VOID TOKEN_INT TOKEN_FLOAT TOKEN_CHAR TOKEN_STR
+		TOKEN_BOOL TOKEN_TRUE TOKEN_FALSE
+		TOKEN_ADD TOKEN_MULT TOKEN_DIV TOKEN_SUB TOKEN_UNARY
+		TOKEN_PRINTF TOKEN_SCANF 
+		TOKEN_FOR TOKEN_WHILE TOKEN_IF TOKEN_ELSE  
+		TOKEN_MENOR_IGUAL TOKEN_MAIOR_IGUAL TOKEN_IGUAL TOKEN_DIFERENTE TOKEN_MAIOR TOKEN_MENOR
+		TOKEN_AND TOKEN_OR 
+		TOKEN_INCLUDE TOKEN_RETURN TOKEN_COMMENT 
 
-%type <nd_obj> 		program headers value arithmetic expression return
+%type	program headers value arithmetic expression return variableDefinition functionDefinition functions valueType
 
 %%
 
-program: headers functions { }
+program: headers variableDefinition functions { printf("\nProgram"); }
 
-headers: TOKEN_INCLUDE { printf("Header File: %s\n", yytext); }
+headers: headers headers
+|TOKEN_INCLUDE { printf("\nHeader File: %s",yytext); }
 ;
 
-functions: TOKEN_VOID TOKEN_VAR_ID '(' ')' '{' expression '}' { printf("Function"); }
-| valueType TOKEN_VAR_ID '(' ')' '{' expression return '}' { }
+functions: functionDefinition '(' ')' '{' { printf("\nFunction Open"); } variableDefinition return '}' { printf("\nFunction Close"); }
 ;
 
-expression: expression arithmetic expression ';' { printf("Arithmetic Expression\n"); }
+functionDefinition: TOKEN_VOID TOKEN_VAR_ID
+| valueType TOKEN_VAR_ID
+;
+
+variableDefinition: variableDefinition variableDefinition
+| valueType TOKEN_VAR_ID ';' {printf("\nVariable Definition"); }
+| valueType TOKEN_VAR_ID '[' TOKEN_INT_NUM ']' ';'
+| valueType TOKEN_VAR_ID '[' TOKEN_INT_NUM ']' '[' TOKEN_INT_NUM ']' ';'
+| valueType	TOKEN_VAR_ID '=' expression ';' { printf("\nVariable Definition Value"); }
+;
+
+expression: expression arithmetic expression { printf("\nArithmetic Expression"); }
 | value { }
 ;
 
-arithmetic: TOKEN_ADD 
+arithmetic: TOKEN_ADD
 | TOKEN_SUB 
 | TOKEN_MULT
 | TOKEN_DIV
@@ -85,27 +95,27 @@ valueType:	TOKEN_INT { }
 | TOKEN_BOOL { }
 ;
 
-value: TOKEN_INT_NUM { printf("Integer: %s\n", yytext); }
+value: TOKEN_INT_NUM { printf("\nInteger: %s", yytext); }
 | TOKEN_FLOAT_NUM { }
 | TOKEN_CHAR_VAL { }
-| TOKEN_STR_VAL { }
+| TOKEN_STR_VAL { printf("\nString: %s", yytext);}
 | TOKEN_TRUE { }
 | TOKEN_FALSE { }
 | TOKEN_VAR_ID { }
 ;
 
-return: TOKEN_RETURN value { printf("Return"); }
-| { printf("Return vazio"); }
+return: TOKEN_RETURN value ';'{ printf("\nReturn"); }
+| TOKEN_RETURN ';' { printf("\nReturn vazio "); }
 ;
 
 %%
 
 int main() {
     yyparse();
-    printf("\n\n \t\t\t\t\t\t PHASE 1: LEXICAL ANALYSIS \n\n");
+    /* printf("\n\n \t\t\t\t\t\t PHASE 1: LEXICAL ANALYSIS \n\n");
 	printf("\nSYMBOL   DATATYPE   TYPE   LINE NUMBER \n");
 	printf("_______________________________________\n\n");
-	/* int i=0;
+	int i=0;
 	for(i=0; i<count; i++) {
 		printf("%s\t%s\t%s\t%d\t\n", symbolTable[i].id_name, symbolTable[i].data_type, symbolTable[i].type, symbolTable[i].line_no);
 	}
@@ -115,11 +125,12 @@ int main() {
 	}
 	printf("\n\n");
 	printf("\t\t\t\t\t\t PHASE 2: SYNTAX ANALYSIS \n\n");
-	printtree(head);  */
-	printf("\n\n");
+	printtree(head); 
+	printf("\n\n"); */
+	printf("\n----------------------- Fim do Arquivo\n");
 }
 
-int search(char *type) {
+/* int search(char *type) {
 	int i;
 	for(i=count-1; i>=0; i--) {
 		if(strcmp(symbolTable[i].id_name, type)==0) {
@@ -128,9 +139,9 @@ int search(char *type) {
 		}
 	}
 	return 0;
-}
+} */
 
-void add(char c) {
+/* void add(char c) {
     q=search(yytext);
 	if(q==0) {
 		if(c=='H') {
@@ -162,9 +173,9 @@ void add(char c) {
 			count++;
 		}
     }
-}
+} */
 
-struct node* mknode(struct node *left, struct node *right, char *token) {	
+/* struct node* mknode(struct node *left, struct node *right, char *token) {	
 	struct node *newnode = (struct node *)malloc(sizeof(struct node));
 	char *newstr = (char *)malloc(strlen(token)+1);
 	strcpy(newstr, token);
@@ -172,15 +183,15 @@ struct node* mknode(struct node *left, struct node *right, char *token) {
 	newnode->right = right;
 	newnode->token = newstr;
 	return(newnode);
-}
+} */
 
-void printtree(struct node* tree) {
+/* void printtree(struct node* tree) {
 	printf("\n\n Inorder traversal of the Parse Tree: \n\n");
 	printInorder(tree);
 	printf("\n\n");
-}
+} */
 
-void printInorder(struct node *tree) {
+/* void printInorder(struct node *tree) {
 	int i;
 	if (tree->left) {
 		printInorder(tree->left);
@@ -189,11 +200,11 @@ void printInorder(struct node *tree) {
 	if (tree->right) {
 		printInorder(tree->right);
 	}
-}
+} */
 
-void insert_type() {
+/* void insert_type() {
 	strcpy(type, yytext);
-}
+} */
 
 void yyerror(const char* msg) {
     fprintf(stderr, "%s\n", msg);
