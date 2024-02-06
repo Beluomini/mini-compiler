@@ -1,13 +1,21 @@
 #incluir <vai.h>
-#incluir <vorta.h>
+#incluir <vemscas.h>
 
-inteiro a;
-inteiro b = 1;
-inteiro c = "palhaço";
-palavra d = "limão";
-palavra e = 2;
+inteiro a = 1;
+inteiro b = 2;
+
+classe Carro {
+    inteiro roda = 4;
+    inteiro capo = 1;
+
+    acao vazio anda(){
+        roda = 4;
+        roda = 4;
+        retorna 1;
+    }
+}
 
 vazio main(){
     palavra dentro = "oi";
-    retorna 1;
+    retorna 2;
 }

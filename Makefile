@@ -6,7 +6,7 @@ all : clear lex parser compiling running
 
 clear:
 	@clear
-	@echo "mini-compiler ---------------------"
+	@echo "MINI COMPILER ---------------------"
 
 lex :
 	@echo "\n-> generating lex.yy.c"
