@@ -45,58 +45,166 @@
 } 
 
 %token  TOKEN_VOID
-%token<nd_obj>	TOKEN_INT_NUM TOKEN_FLOAT_NUM TOKEN_CHAR_VAL TOKEN_STR_VAL TOKEN_VAR_ID 
-				TOKEN_CLASS_ID TOKEN_CLASS TOKEN_MAIN TOKEN_START_FUNC
-				TOKEN_INT TOKEN_FLOAT TOKEN_CHAR TOKEN_STR
-				TOKEN_ADD TOKEN_MULT TOKEN_DIV TOKEN_SUB
-				TOKEN_PRINTF TOKEN_SCANF 
-				TOKEN_FOR TOKEN_WHILE TOKEN_IF TOKEN_ELSE  
-				TOKEN_MENOR_IGUAL TOKEN_MAIOR_IGUAL TOKEN_IGUAL TOKEN_DIFERENTE TOKEN_MAIOR TOKEN_MENOR
-				TOKEN_AND TOKEN_OR 
-				TOKEN_INCLUDE TOKEN_RETURN
+%token	<nd_obj>	TOKEN_INT_NUM TOKEN_FLOAT_NUM TOKEN_CHAR_VAL TOKEN_STR_VAL TOKEN_VAR_ID 
+					TOKEN_CLASS_ID TOKEN_CLASS TOKEN_START_METHOD TOKEN_MAIN TOKEN_START_FUNC
+					TOKEN_INT TOKEN_FLOAT TOKEN_CHAR TOKEN_STR
+					TOKEN_ADD TOKEN_MULT TOKEN_DIV TOKEN_SUB
+					TOKEN_PRINTF TOKEN_SCANF TOKEN_WHILE TOKEN_IF TOKEN_ELSE  
+					TOKEN_MENOR_IGUAL TOKEN_MAIOR_IGUAL TOKEN_IGUAL TOKEN_DIFERENTE 
+					TOKEN_MAIOR TOKEN_MENOR TOKEN_AND TOKEN_OR 
+					TOKEN_INCLUDE TOKEN_RETURN
 
-%type	program headers programBody body main class functions variableDefinition variableAssignment valueType value arithmetic expression return
+%type	<nd_obj>	program headers body header main
+					structs struct classes class methods method methodCall
+					functions function functionCall params param actions action
+					variableDefinition variableAssignment loop
+					comparation comparator
+					valueType value arithmetic expression return
 
 %%
 
-program: { printf("\nProgram started"); } headers programBody { printf("\nProgram finished"); }
+program: headers body {
+	$$.nd = mknode($1.nd, $2.nd, "program"); 
+	head = $$.nd; 
+}
 
-headers: headers headers 
-| TOKEN_INCLUDE { add('H'); printf("\nHeader"); }
+headers: header headers { $$.nd = mknode($1.nd, $2.nd, "headers"); }
+| {$$.nd = NULL;}
 ;
 
-programBody: main
-| class
-| functions
-| variableDefinition
+header: TOKEN_INCLUDE { add('H'); $$.nd = mknode(NULL, NULL, $1.name); }
+;
+
+body: structs main '(' ')' '{' { printf("\nMain open"); } actions functions return '}' { printf("\nMain close"); }{ printf("\nProgram finished"); }
+{ 
+    $$.nd = mknode($1.nd, $2.nd, "body"); 
+    head = $$.nd; 
+}
+;
+
+main: valueType TOKEN_MAIN { add('F'); } 
+;
+
+structs: struct structs
+{
+	$$.nd = mknode($1.nd, $2.nd, "structs");
+}
+| {$$.nd = NULL;}
+;
+
+struct: functions
+| classes
+;
+
+classes: class classes
+{
+	$$.nd = mknode($1.nd, $2.nd, "classes");
+}
+| {$$.nd = NULL;}
+;
+
+class: TOKEN_CLASS TOKEN_CLASS_ID { add('G'); } '{' actions methods '}'
+{
+	$$.nd = mknode($5.nd, $6.nd, "class");
+}
+;
+
+methods: method methods
+{
+	$$.nd = mknode($1.nd, $2.nd, "methods");
+}
+| {$$.nd = NULL;}
+;
+
+method: TOKEN_START_METHOD valueType TOKEN_VAR_ID { add('M'); } '(' params ')' '{' actions return '}'
+{
+	$$.nd = mknode($6.nd, $9.nd, "method");
+}
+;
+
+methodCall: TOKEN_CLASS_ID '.' TOKEN_VAR_ID '(' params ')'
+{
+	$$.nd = mknode($5.nd, NULL, "methodCall");
+}
+
+functions: function functions
+{
+	$$.nd = mknode($1.nd, $2.nd, "functions");
+}
+| {$$.nd = NULL;}
+
+function: TOKEN_START_FUNC { add('K'); } valueType TOKEN_VAR_ID { add('F'); } '(' params ')' '{' actions return '}'
+{
+	$$.nd = mknode($7.nd, $10.nd, "function");
+}
+;
+
+functionCall: TOKEN_VAR_ID '(' params ')'
+{
+	$$.nd = mknode($3.nd, NULL, "functionCall");
+}
+;
+
+params: param ',' params
+{
+	$$.nd = mknode($1.nd, $3.nd, "params");
+}
+| {$$.nd = NULL;}
+;
+
+param: valueType TOKEN_VAR_ID { add('V'); }
+{
+	$$.nd = mknode(NULL, NULL, "param");
+}
+;
+
+actions: action actions
+{
+	$$.nd = mknode($1.nd, $2.nd, "actions");
+}
+| {$$.nd = NULL;}
+;
+
+action: variableDefinition
 | variableAssignment
-| programBody programBody
+| loop
 ;
 
-main: valueType TOKEN_MAIN { add('K'); } '(' ')' '{' { printf("\nMain open"); } body return '}' { printf("\nMain close"); }
+loop: TOKEN_WHILE '(' comparation ')' '{' actions '}'
+{
+	$$.nd = mknode($3.nd, $6.nd, "loop");
+}
 ;
 
-body: variableDefinition
-| variableAssignment
-| functions
-| body body
+variableDefinition: valueType TOKEN_VAR_ID { add('V'); } '=' expression ';'
+{
+	$$.nd = mknode($5.nd, NULL, "variableDefinition");
+}
 ;
 
-class: TOKEN_CLASS TOKEN_CLASS_ID { add('G'); } '{' { printf("\nClass Open"); } body '}' { printf("\nClass close"); }
-;
-
-functions: TOKEN_START_FUNC { add('K'); } valueType TOKEN_VAR_ID { add('F'); } '(' ')' '{' { printf("\nFunction Open"); } body return '}' { printf("\nFunction Close"); }
-;
-
-variableDefinition: variableDefinition variableDefinition
-| valueType TOKEN_VAR_ID { add('V'); } '=' expression ';'
-;
-
-variableAssignment: TOKEN_VAR_ID '=' expression ';'
+variableAssignment: TOKEN_VAR_ID '=' expression ';' { }
+| TOKEN_VAR_ID '=' functionCall ';'
+| TOKEN_VAR_ID '=' methodCall ';'
 ;
 
 expression: expression arithmetic expression
-| value { }
+| value
+;
+
+comparation: comparation comparator comparation
+| comparation comparator value
+| value comparator comparation
+| value comparator value
+;
+
+comparator: TOKEN_MENOR_IGUAL
+| TOKEN_MENOR
+| TOKEN_MAIOR_IGUAL
+| TOKEN_MAIOR
+| TOKEN_IGUAL
+| TOKEN_DIFERENTE
+| TOKEN_AND
+| TOKEN_OR
 ;
 
 arithmetic: TOKEN_ADD
@@ -112,11 +220,13 @@ valueType:	TOKEN_INT { insert_type(); }
 | TOKEN_VOID { add('K'); insert_type(); }
 ;
 
-value: TOKEN_INT_NUM { add('C'); }
-| TOKEN_FLOAT_NUM { add('C'); }
-| TOKEN_CHAR_VAL { add('C'); }
-| TOKEN_STR_VAL { add('C'); }
-| TOKEN_VAR_ID { }
+value: TOKEN_INT_NUM { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); }
+| TOKEN_FLOAT_NUM { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); }
+| TOKEN_CHAR_VAL { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); }
+| TOKEN_STR_VAL { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); }
+| TOKEN_VAR_ID { } { $$.nd = mknode(NULL, NULL, "variable"); }
+| functionCall { $$.nd = mknode($1.nd, NULL, "functionCall"); }
+| methodCall { $$.nd = mknode($1.nd, NULL, "methodCall"); }
 ;
 
 return: TOKEN_RETURN { add('K'); } value ';'
@@ -126,7 +236,7 @@ return: TOKEN_RETURN { add('K'); } value ';'
 
 int main() {
     yyparse();
-    printf("\n\n \t\t\t\t\t\t PHASE 1: LEXICAL ANALYSIS \n\n");
+    printf("\n\n \t\t\t\t PHASE 1: LEXICAL ANALYSIS \n\n");
 	printf("\nSYMBOL		DATATYPE	TYPE		LINE NUMBER \n");
 	printf("_____________________________________________________________\n\n");
 	int i=0;
@@ -146,8 +256,8 @@ int main() {
 		free(symbolTable[i].type);
 	}
 	printf("\n\n");
-	printf("\t\t\t\t\t\t PHASE 2: SYNTAX ANALYSIS \n\n");
-	/* printtree(head);  */
+	printf("\t\t\t\t PHASE 2: SYNTAX ANALYSIS \n\n");
+	printtree(head); 
 	printf("\n\n");
 	printf("\n----------------------- FIM DA COMPILACAO\n");
 }
@@ -208,6 +318,13 @@ void add(char c) {
 			symbolTable[count].type=strdup("Class\t");
 			count++;
 		}
+		else if(c=='M') {
+			symbolTable[count].id_name=strdup(yytext);
+			symbolTable[count].data_type=strdup(type);
+			symbolTable[count].line_no=countn;
+			symbolTable[count].type=strdup("Method\t");
+			count++;
+		}
     }
 }
 
@@ -232,10 +349,10 @@ void printInorder(struct node *tree) {
 	if (tree->left) {
 		printInorder(tree->left);
 	}
-	printf("%s, ", tree->token);
 	if (tree->right) {
 		printInorder(tree->right);
 	}
+	printf("%s, ", tree->token);
 }
 
 void insert_type() {

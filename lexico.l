@@ -14,6 +14,7 @@ digit [0-9]
 
 "main"                                          { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_MAIN; }
 "acao"                                          { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_START_FUNC; }
+"metodo"                                        { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_START_METHOD; } 
 "escreve"                                       { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_PRINTF; }
 "escaneia"                                      { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_SCANF; }
 "inteiro"                                       { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_INT; }
@@ -23,7 +24,7 @@ digit [0-9]
 "vazio"                                         { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_VOID; }
 "palavra"                                       { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_STR; }
 "retorna"                                       { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_RETURN; }
-"para"	                                        { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_FOR; }
+"enquanto"                                      { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_WHILE; }
 "se"	                                        { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_IF; }
 "senao"	                                        { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_ELSE; }
 ^"#incluir"[ ]*<.+\.h>                          { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_INCLUDE; }

@@ -1,14 +1,14 @@
 #incluir <vai.h>
 #incluir <vemscas.h>
 
-inteiro a = 1;
-inteiro b = 2;
-
 classe Carro {
     inteiro roda = 4;
     inteiro capo = 1;
 
-    acao vazio anda(){
+    metodo palavra anda(){
+        enquanto(a<4){
+            roda = roda + 4;
+        }
         roda = 4;
         roda = 4;
         retorna 1;
