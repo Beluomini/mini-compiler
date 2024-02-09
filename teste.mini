@@ -6,7 +6,7 @@ classe Carro {
     inteiro capo = 1;
 
     metodo palavra anda(){
-        enquanto(a<4){
+        repete(a<4){
             roda = roda + 4;
         }
         roda = 4;

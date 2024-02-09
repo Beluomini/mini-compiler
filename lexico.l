@@ -24,7 +24,7 @@ digit [0-9]
 "vazio"                                         { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_VOID; }
 "palavra"                                       { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_STR; }
 "retorna"                                       { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_RETURN; }
-"enquanto"                                      { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_WHILE; }
+"repete"                                      { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_WHILE; }
 "se"	                                        { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_IF; }
 "senao"	                                        { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_ELSE; }
 ^"#incluir"[ ]*<.+\.h>                          { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_INCLUDE; }

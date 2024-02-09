@@ -57,7 +57,7 @@
 %type	<nd_obj>	program headers body header main
 					structs struct classes class methods method methodCall
 					functions function functionCall params param actions action
-					variableDefinition variableAssignment loop
+					variableDefinition variableAssignment loop print scan
 					comparation comparator
 					valueType value arithmetic expression return
 
@@ -75,14 +75,14 @@ headers: header headers { $$.nd = mknode($1.nd, $2.nd, "headers"); }
 header: TOKEN_INCLUDE { add('H'); $$.nd = mknode(NULL, NULL, $1.name); }
 ;
 
-body: structs main '(' ')' '{' { printf("\nMain open"); } actions functions return '}' { printf("\nMain close"); }{ printf("\nProgram finished"); }
+body: structs main '(' ')' '{'  actions return '}'
 { 
+	$2.nd = mknode($6.nd, $7.nd, "main");
     $$.nd = mknode($1.nd, $2.nd, "body"); 
-    head = $$.nd; 
 }
 ;
 
-main: valueType TOKEN_MAIN { add('F'); } 
+main: valueType TOKEN_MAIN { add('F'); }
 ;
 
 structs: struct structs
@@ -116,9 +116,9 @@ methods: method methods
 | {$$.nd = NULL;}
 ;
 
-method: TOKEN_START_METHOD valueType TOKEN_VAR_ID { add('M'); } '(' params ')' '{' actions return '}'
+method: TOKEN_START_METHOD { add('K'); } valueType TOKEN_VAR_ID { add('M'); } '(' params ')' '{' actions return '}'
 {
-	$$.nd = mknode($6.nd, $9.nd, "method");
+	$$.nd = mknode($7.nd, $10.nd, "method");
 }
 ;
 
@@ -168,11 +168,25 @@ actions: action actions
 action: variableDefinition
 | variableAssignment
 | loop
+| print
+| scan
 ;
 
-loop: TOKEN_WHILE '(' comparation ')' '{' actions '}'
+loop: TOKEN_WHILE { add('K'); } '(' comparation ')' '{' actions '}'
 {
-	$$.nd = mknode($3.nd, $6.nd, "loop");
+	$$.nd = mknode($4.nd, $7.nd, "loop");
+}
+;
+
+print: TOKEN_PRINTF { add('K'); } '(' value ')' ';'
+{
+	$$.nd = mknode($4.nd, NULL, "print");
+}
+;
+
+scan: TOKEN_SCANF { add('K'); } '(' TOKEN_VAR_ID ')' ';'
+{
+	$$.nd = mknode(NULL, NULL, "scan");
 }
 ;
 
@@ -182,35 +196,59 @@ variableDefinition: valueType TOKEN_VAR_ID { add('V'); } '=' expression ';'
 }
 ;
 
-variableAssignment: TOKEN_VAR_ID '=' expression ';' { }
+variableAssignment: TOKEN_VAR_ID '=' expression ';' 
+{
+	$$.nd = mknode($3.nd, NULL, "variableAssignment");
+}
 | TOKEN_VAR_ID '=' functionCall ';'
+{
+	$$.nd = mknode($3.nd, NULL, "variableAssignment");
+}
 | TOKEN_VAR_ID '=' methodCall ';'
+{
+	$$.nd = mknode($3.nd, NULL, "variableAssignment");
+}
 ;
 
 expression: expression arithmetic expression
+{
+	$$.nd = mknode($1.nd, $3.nd, "expression");
+}
 | value
 ;
 
 comparation: comparation comparator comparation
+{
+	$$.nd = mknode($1.nd, $3.nd, "comparation");
+}
 | comparation comparator value
+{
+	$$.nd = mknode($1.nd, NULL, "comparation");
+}
 | value comparator comparation
+{
+	$$.nd = mknode(NULL, $3.nd, "comparation");
+}
 | value comparator value
+{
+	$$.nd = mknode(NULL, NULL, "comparation");
+}
 ;
 
-comparator: TOKEN_MENOR_IGUAL
-| TOKEN_MENOR
-| TOKEN_MAIOR_IGUAL
-| TOKEN_MAIOR
-| TOKEN_IGUAL
-| TOKEN_DIFERENTE
-| TOKEN_AND
-| TOKEN_OR
+comparator: TOKEN_MENOR_IGUAL { add('K'); } { $$.nd = mknode(NULL, NULL, "comparator"); }
+| TOKEN_MENOR { add('K'); } { $$.nd = mknode(NULL, NULL, "comparator"); }
+| TOKEN_MAIOR_IGUAL { add('K'); } { $$.nd = mknode(NULL, NULL, "comparator"); }
+| TOKEN_MAIOR { add('K'); } { $$.nd = mknode(NULL, NULL, "comparator"); }
+| TOKEN_IGUAL { add('K'); } { $$.nd = mknode(NULL, NULL, "comparator"); }
+| TOKEN_DIFERENTE { add('K'); } { $$.nd = mknode(NULL, NULL, "comparator"); }
+| TOKEN_AND { add('K'); } { $$.nd = mknode(NULL, NULL, "comparator"); }
+| TOKEN_OR { add('K'); } { $$.nd = mknode(NULL, NULL, "comparator"); }
 ;
 
-arithmetic: TOKEN_ADD
-| TOKEN_SUB 
-| TOKEN_MULT
-| TOKEN_DIV
+arithmetic: TOKEN_ADD { add('K'); } { $$.nd = mknode(NULL, NULL, "arithmetic"); }
+| TOKEN_SUB { add('K'); } { $$.nd = mknode(NULL, NULL, "arithmetic"); }
+| TOKEN_MULT { add('K'); } { $$.nd = mknode(NULL, NULL, "arithmetic"); }
+| TOKEN_DIV { add('K'); } { $$.nd = mknode(NULL, NULL, "arithmetic"); }
 ;
 
 valueType:	TOKEN_INT { insert_type(); }
@@ -230,6 +268,10 @@ value: TOKEN_INT_NUM { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); }
 ;
 
 return: TOKEN_RETURN { add('K'); } value ';'
+{
+	$$.nd = mknode($3.nd, NULL, "return");
+}
+| {$$.nd = NULL;}
 ;
 
 %%
