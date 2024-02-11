@@ -58,6 +58,7 @@
 					structs struct classes class methods method methodCall
 					functions function functionCall params param actions action
 					variableDefinition variableAssignment loop print scan
+					vectorDefinition vectorValueAssignment vectorData
 					comparation comparator
 					valueType value arithmetic expression return
 
@@ -167,6 +168,8 @@ actions: action actions
 
 action: variableDefinition
 | variableAssignment
+| vectorDefinition
+| vectorValueAssignment
 | loop
 | print
 | scan
@@ -187,6 +190,40 @@ print: TOKEN_PRINTF { add('K'); } '(' value ')' ';'
 scan: TOKEN_SCANF { add('K'); } '(' TOKEN_VAR_ID ')' ';'
 {
 	$$.nd = mknode(NULL, NULL, "scan");
+}
+;
+
+vectorDefinition: valueType '[' TOKEN_INT_NUM ']' TOKEN_VAR_ID { add('V'); } '=' '{' vectorData '}' ';'
+{
+	$$.nd = mknode($9.nd, NULL, "vectorDefinition");
+}
+;
+
+vectorValueAssignment: TOKEN_VAR_ID '[' TOKEN_INT_NUM ']' '=' value ';'
+{
+	$$.nd = mknode($6.nd, NULL, "vectorValueAssignment");
+}
+| TOKEN_VAR_ID '[' TOKEN_INT_NUM ']' '=' functionCall ';'
+{
+	$$.nd = mknode(NULL, NULL, "vectorValueAssignment");
+}
+| TOKEN_VAR_ID '[' TOKEN_INT_NUM ']' '=' methodCall ';'
+{
+	$$.nd = mknode(NULL, NULL, "vectorValueAssignment");
+}
+| TOKEN_VAR_ID '['']' '=' vectorData ';'
+{
+	$$.nd = mknode($5.nd, NULL, "vectorValueAssignment");
+}
+;
+
+vectorData: value ',' vectorData
+{
+	$$.nd = mknode($1.nd, $3.nd, "vectorData");
+}
+| value
+{
+	$$.nd = mknode($1.nd, NULL, "vectorData");
 }
 ;
 
