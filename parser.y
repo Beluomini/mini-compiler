@@ -58,8 +58,8 @@
 					structs struct classes class methods method methodCall
 					functions function functionCall params param actions action
 					variableDefinition variableAssignment loop print scan
+					startIf if else comparation comparator
 					vectorDefinition vectorValueAssignment vectorData
-					comparation comparator
 					valueType value arithmetic expression return
 
 %%
@@ -127,6 +127,7 @@ methodCall: TOKEN_CLASS_ID '.' TOKEN_VAR_ID '(' params ')'
 {
 	$$.nd = mknode($5.nd, NULL, "methodCall");
 }
+;
 
 functions: function functions
 {
@@ -173,6 +174,26 @@ action: variableDefinition
 | loop
 | print
 | scan
+| startIf
+;
+
+startIf: TOKEN_IF { add('K'); } if else
+{
+	$$.nd = mknode($3.nd, $4.nd, "if else");
+}
+;
+
+if: '(' comparation ')' '{' actions '}'
+{
+	$$.nd = mknode($2.nd, $5.nd, "if");
+}
+;
+
+else: TOKEN_ELSE { add('K'); } '{' actions '}'
+{
+	$$.nd = mknode($4.nd, NULL, "else");
+}
+| {$$.nd = NULL;}
 ;
 
 loop: TOKEN_WHILE { add('K'); } '(' comparation ')' '{' actions '}'
@@ -272,20 +293,20 @@ comparation: comparation comparator comparation
 }
 ;
 
-comparator: TOKEN_MENOR_IGUAL { add('K'); } { $$.nd = mknode(NULL, NULL, "comparator"); }
-| TOKEN_MENOR { add('K'); } { $$.nd = mknode(NULL, NULL, "comparator"); }
-| TOKEN_MAIOR_IGUAL { add('K'); } { $$.nd = mknode(NULL, NULL, "comparator"); }
-| TOKEN_MAIOR { add('K'); } { $$.nd = mknode(NULL, NULL, "comparator"); }
-| TOKEN_IGUAL { add('K'); } { $$.nd = mknode(NULL, NULL, "comparator"); }
-| TOKEN_DIFERENTE { add('K'); } { $$.nd = mknode(NULL, NULL, "comparator"); }
-| TOKEN_AND { add('K'); } { $$.nd = mknode(NULL, NULL, "comparator"); }
-| TOKEN_OR { add('K'); } { $$.nd = mknode(NULL, NULL, "comparator"); }
+comparator: TOKEN_MENOR_IGUAL { $$.nd = mknode(NULL, NULL, "comparator"); }
+| TOKEN_MENOR { $$.nd = mknode(NULL, NULL, "comparator"); }
+| TOKEN_MAIOR_IGUAL { $$.nd = mknode(NULL, NULL, "comparator"); }
+| TOKEN_MAIOR { $$.nd = mknode(NULL, NULL, "comparator"); }
+| TOKEN_IGUAL { $$.nd = mknode(NULL, NULL, "comparator"); }
+| TOKEN_DIFERENTE { $$.nd = mknode(NULL, NULL, "comparator"); }
+| TOKEN_AND { $$.nd = mknode(NULL, NULL, "comparator"); }
+| TOKEN_OR { $$.nd = mknode(NULL, NULL, "comparator"); }
 ;
 
-arithmetic: TOKEN_ADD { add('K'); } { $$.nd = mknode(NULL, NULL, "arithmetic"); }
-| TOKEN_SUB { add('K'); } { $$.nd = mknode(NULL, NULL, "arithmetic"); }
-| TOKEN_MULT { add('K'); } { $$.nd = mknode(NULL, NULL, "arithmetic"); }
-| TOKEN_DIV { add('K'); } { $$.nd = mknode(NULL, NULL, "arithmetic"); }
+arithmetic: TOKEN_ADD { $$.nd = mknode(NULL, NULL, "arithmetic"); }
+| TOKEN_SUB { $$.nd = mknode(NULL, NULL, "arithmetic"); }
+| TOKEN_MULT { $$.nd = mknode(NULL, NULL, "arithmetic"); }
+| TOKEN_DIV { $$.nd = mknode(NULL, NULL, "arithmetic"); }
 ;
 
 valueType:	TOKEN_INT { insert_type(); }

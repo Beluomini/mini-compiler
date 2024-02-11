@@ -18,5 +18,13 @@ classe Carro {
 
 vazio main(){
     palavra dentro = "oi";
+    se(b==5){
+        dentro = "tchau";
+    }
+    se(c<=2){
+        roda = 3;
+    }senao{
+        roda = 4;
+    }
     retorna 2;
 }
