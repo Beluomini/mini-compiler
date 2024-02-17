@@ -393,9 +393,11 @@ int main(int argc, char **argv) {
 		printtree(trees[1]); 
 		printf("\n\n");
 
-		printf("\t\t\t\t PHASE 2: SYNTAX ANALYSIS FILE %s \n\n", fileNames[2]);
-		printtree(trees[2]); 
-		printf("\n\n");
+		for (int i = 2; i < argc; i++) {
+			printf("\t\t\t\t FILE %s SYNTAX ANALYSIS \n\n", fileNames[i]);
+			printtree(trees[i]); 
+			printf("\n\n");
+		}
 		printf("\n----------------------- FIM DA COMPILACAO\n");
 
 }
