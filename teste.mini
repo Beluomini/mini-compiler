@@ -1,5 +1,4 @@
-#incluir <vai.h>
-#incluir <vemscas.h>
+#incluir <bib.mini>
 
 classe Carro {
     inteiro roda = 4;

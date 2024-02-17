@@ -52,9 +52,9 @@
 					TOKEN_PRINTF TOKEN_SCANF TOKEN_WHILE TOKEN_IF TOKEN_ELSE  
 					TOKEN_MENOR_IGUAL TOKEN_MAIOR_IGUAL TOKEN_IGUAL TOKEN_DIFERENTE 
 					TOKEN_MAIOR TOKEN_MENOR TOKEN_AND TOKEN_OR 
-					TOKEN_INCLUDE TOKEN_RETURN
+					TOKEN_INCLUDE TOKEN_LIB TOKEN_RETURN
 
-%type	<nd_obj>	program headers body header main
+%type	<nd_obj>	file program headers body header main
 					structs struct classes class methods method methodCall
 					functions function functionCall params param actions action
 					variableDefinition variableAssignment loop print scan
@@ -64,16 +64,31 @@
 
 %%
 
+file: program
+{
+	$$.nd = mknode($1.nd, NULL, "file");
+	head = $$.nd; 
+}
+| headers classes
+{
+	$$.nd = mknode($1.nd, $2.nd, "file");
+	head = $$.nd; 
+}
+;
+
 program: headers body {
 	$$.nd = mknode($1.nd, $2.nd, "program"); 
-	head = $$.nd; 
 }
 
 headers: header headers { $$.nd = mknode($1.nd, $2.nd, "headers"); }
 | {$$.nd = NULL;}
 ;
 
-header: TOKEN_INCLUDE { add('H'); $$.nd = mknode(NULL, NULL, $1.name); }
+header: TOKEN_INCLUDE TOKEN_LIB
+{ 
+	add('H'); 
+	$$.nd = mknode(NULL, NULL, $2.name); 
+}
 ;
 
 body: structs main '(' ')' '{'  actions return '}'
@@ -83,7 +98,10 @@ body: structs main '(' ')' '{'  actions return '}'
 }
 ;
 
-main: valueType TOKEN_MAIN { add('F'); }
+main: valueType TOKEN_MAIN 
+{ 
+	add('F'); 
+}
 ;
 
 structs: struct structs
@@ -334,32 +352,52 @@ return: TOKEN_RETURN { add('K'); } value ';'
 
 %%
 
-int main() {
-    yyparse();
-    printf("\n\n \t\t\t\t PHASE 1: LEXICAL ANALYSIS \n\n");
-	printf("\nSYMBOL		DATATYPE	TYPE		LINE NUMBER \n");
-	printf("_____________________________________________________________\n\n");
-	int i=0;
-	for(i=0; i<count; i++) {
-		char *posicao = strstr(symbolTable[i].id_name, "incluir");
-		if (posicao != NULL) {
-			// Avança a posição para o caractere após a palavra "incluir"
-			posicao += strlen("incluir");
+int main(int argc, char **argv) {
 
-			printf("%s\t%s\t\t%s\t%d\t\n", posicao, symbolTable[i].data_type, symbolTable[i].type, symbolTable[i].line_no);
-		}else{
-			printf("%s\t\t%s\t\t%s\t%d\t\n", symbolTable[i].id_name, symbolTable[i].data_type, symbolTable[i].type, symbolTable[i].line_no);
+	struct node *trees[argc];
+	char *fileNames[argc];
+
+	for(int i=1;i<argc;i++){
+		FILE *f = fopen(argv[i], "r");
+		if (!f) {
+			printf("\nErro ao abrir o arquivo: %s\n", argv[i]);
+			return 1;
 		}
+
+		yyin = f;
+
+
+		yyparse();
+
+		trees[i] = head;
+		fileNames[i] = argv[i];
+		head = NULL;
+		
+		fclose(f);
 	}
-	for(i=0;i<count;i++){
-		free(symbolTable[i].id_name);
-		free(symbolTable[i].type);
-	}
-	printf("\n\n");
-	printf("\t\t\t\t PHASE 2: SYNTAX ANALYSIS \n\n");
-	printtree(head); 
-	printf("\n\n");
-	printf("\n----------------------- FIM DA COMPILACAO\n");
+
+
+		printf("\n\n \t\t\t\t PHASE 1: LEXICAL ANALYSIS \n\n");
+		printf("\nSYMBOL		DATATYPE	TYPE		LINE NUMBER \n");
+		printf("_____________________________________________________________\n\n");
+		int i=0;
+		for(i=0; i<count; i++) {
+			printf("%s\t\t%s\t\t%s\t%d\t\n", symbolTable[i].id_name, symbolTable[i].data_type, symbolTable[i].type, symbolTable[i].line_no);	
+		}
+		for(i=0;i<count;i++){
+			free(symbolTable[i].id_name);
+			free(symbolTable[i].type);
+		}
+		printf("\n\n");
+		printf("\t\t\t\t PHASE 2: SYNTAX ANALYSIS FILE %s \n\n", fileNames[1]);
+		printtree(trees[1]); 
+		printf("\n\n");
+
+		printf("\t\t\t\t PHASE 2: SYNTAX ANALYSIS FILE %s \n\n", fileNames[2]);
+		printtree(trees[2]); 
+		printf("\n\n");
+		printf("\n----------------------- FIM DA COMPILACAO\n");
+
 }
 
 int search(char *type) {
@@ -384,7 +422,7 @@ void add(char c) {
 			count++;
 		}
 		else if(c=='K') {
-			symbolTable[count].id_name=strdup(yytext);
+			symbolTable[count].id_name=strdup(yytext), "\t";
 			symbolTable[count].data_type=strdup("N/A");
 			symbolTable[count].line_no=countn;
 			symbolTable[count].type=strdup("Keyword\t");

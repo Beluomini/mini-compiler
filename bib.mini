@@ -1,0 +1,10 @@
+classe Onibus {
+    inteiro catraca = 4;
+
+    metodo palavra rota(){
+        inteiro[3] paradas = {1, 3, 4};
+        paradas[2] = 1;
+        catraca = 4;
+        retorna 1;
+    }
+}

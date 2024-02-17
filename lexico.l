@@ -27,7 +27,8 @@ digit [0-9]
 "repete"                                        { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_WHILE; }
 "se"	                                        { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_IF; }
 "senao"	                                        { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_ELSE; }
-^"#incluir"[ ]*<.+\.h>                          { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_INCLUDE; }
+^"#incluir "                                    { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_INCLUDE; }
+[<].*[>]                                        { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_LIB; }
 [-]?{digit}+                                    { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_INT_NUM; }
 [-]?{digit}+\.{digit}{1,6}                      { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_FLOAT_NUM; }
 {lowletter}({upletter}|{lowletter}|{digit})*    { strcpy(yylval.nd_obj.name,(yytext)); return TOKEN_VAR_ID; }

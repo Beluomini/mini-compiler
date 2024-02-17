@@ -1,6 +1,7 @@
 LEX_FILE = lexico.l
 PARSER_FILE = parser.y
 TEST_FILE = teste.mini
+TEST_FILE2 = bib.mini
 
 all : clear lex parser compiling running
 
@@ -22,4 +23,4 @@ compiling :
 
 running :
 	@echo "\n-> running..."
-	@./a.out < $(TEST_FILE)
+	@./a.out $(TEST_FILE) $(TEST_FILE2)
