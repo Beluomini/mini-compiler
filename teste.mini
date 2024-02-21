@@ -1,24 +1,30 @@
 #incluir <bib.mini>
 
 classe Carro {
-    inteiro roda = 4;
+    inteiro roda = 2;
     inteiro capo = 1;
 
     metodo palavra anda(){
-        escreve("teste\n");
-        escaneia(capo);
         repete(a<4){
             roda = 2 + 4;
         }
+
         inteiro[3] pecas = {1, 3, 4};
         pecas[2] = 1;
         roda = 4;
         retorna 1;
     }
 }
+acao inteiro printscan(){
+    escreve("teste\n");
+    escaneia(capo);
+    retorna "teste";
+}
 
 vazio main(){
     palavra dentro = "oi";
+
+
     se(b==5){
         dentro = "tchau";
     }

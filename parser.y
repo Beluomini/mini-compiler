@@ -16,6 +16,9 @@
     void printtree(struct node*);
     void printInorder(struct node *);
 
+	int check_types(char *, char *);
+	char *get_type(char *);
+
     struct node* mknode(struct node *left, struct node *right, char *token);
 
     struct dataType {
@@ -30,10 +33,12 @@
     char type[10];
     extern int countn;
 	char *error_msg = "Erro de sintático não reconhecido";
-	int count_error = 0;
+	int countSinError = 0;
+	char *sem_error[100];
+	int countSemError = 0;
 
 	char *scan_data;
-    
+
 	struct node *head;
     struct node { 
 	struct node *left; 
@@ -45,6 +50,7 @@
 %union { 
 	struct var_name { 
 		char name[100]; 
+		char type[100];
 		struct node* nd;
 	} nd_obj; 
 } 
@@ -140,15 +146,25 @@ methods: method methods
 | {$$.nd = NULL;}
 ;
 
-method: TOKEN_START_METHOD { add('K'); error_msg="Tipo faltando"; } valueType {error_msg="Metodo deve ter um nome"; }TOKEN_VAR_ID { error_msg="Faltando '('"; } '(' params {error_msg="Faltando ')'";} ')'  {error_msg="Faltando '{'";} '{' actions {error_msg="Metodo sem retorno";} return {error_msg="Faltando '}'";} '}'
+method: TOKEN_START_METHOD { add('K'); error_msg="Tipo faltando"; } valueType {error_msg="Metodo deve ter um nome"; }TOKEN_VAR_ID { strcpy($5.name, yytext); error_msg="Faltando '('"; } '(' params {error_msg="Faltando ')'";} ')'  {error_msg="Faltando '{'";} '{' actions {error_msg="Metodo sem retorno";} return {error_msg="Faltando '}'";} '}'
 {
 	$$.nd = mknode($8.nd, $13.nd, "method");
+	if(strcmp($3.type, $15.type) != 0) {
+		char msg[100] = "";
+		strcat(msg, "Retorno de método diferente do tipo de retorno: ");
+		strcat(msg, $5.name);
+		sem_error[countSemError] = (char *)malloc(strlen(msg) + 1);
+		strcpy(sem_error[countSemError], msg);
+		countSemError++;
+	}
 }
 ;
 
 methodCall: TOKEN_CLASS_ID '.' TOKEN_VAR_ID { error_msg="Faltando '('"; } '(' params { error_msg="Faltando ')'"; } ')'
 {
 	$$.nd = mknode($6.nd, NULL, "methodCall");
+	char *type = get_type($3.name);
+	strcpy($$.type, type);
 }
 ;
 
@@ -157,16 +173,27 @@ functions: function functions
 	$$.nd = mknode($1.nd, $2.nd, "functions");
 }
 | {$$.nd = NULL;}
+;
 
-function: TOKEN_START_FUNC { add('K'); error_msg="Tipo faltando"; } valueType {error_msg="Função deve ter um nome"; } TOKEN_VAR_ID { add('F'); error_msg="Faltando '('";} '(' params {error_msg="Faltando ')'";} ')' {error_msg="Faltando '{'";} '{' actions return {error_msg="Faltando '}'";} '}'
+function: TOKEN_START_FUNC { add('K'); error_msg="Tipo faltando"; } valueType {error_msg="Função deve ter um nome"; } TOKEN_VAR_ID { strcpy($5.name,yytext); add('F'); error_msg="Faltando '('";} '(' params {error_msg="Faltando ')'";} ')' {error_msg="Faltando '{'";} '{' actions return {error_msg="Faltando '}'";} '}'
 {
 	$$.nd = mknode($8.nd, $13.nd, "function");
+	if(strcmp($3.type, $14.type) != 0) {
+		char msg[100] = "";
+		strcat(msg, "Retorno de função diferente do tipo de retorno: ");
+		strcat(msg, $5.name);
+		sem_error[countSemError] = (char *)malloc(strlen(msg) + 1);
+		strcpy(sem_error[countSemError], msg);
+		countSemError++;
+	}
 }
 ;
 
 functionCall: TOKEN_VAR_ID { error_msg="Faltando '('"; } '(' params { error_msg="Faltando ')'"; } ')'
 {
 	$$.nd = mknode($4.nd, NULL, "functionCall");
+	char *type = get_type($1.name);
+	strcpy($$.type, type);
 }
 ;
 
@@ -271,9 +298,18 @@ vectorData: value ',' vectorData
 }
 ;
 
-variableDefinition: valueType TOKEN_VAR_ID { add('V'); } '=' expression { error_msg="Missing ';'"; } ';'
+variableDefinition: valueType TOKEN_VAR_ID { strcpy($2.name, yytext); add('V'); } '=' expression { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode($5.nd, NULL, "variableDefinition");
+	int check = check_types($1.type, $5.type);
+	if(check == 1) {
+		char msg[100] = "";
+		strcat(msg, "Atribuição de tipos diferentes com a variável: ");
+		strcat(msg, $2.name);
+		sem_error[countSemError] = (char *)malloc(strlen(msg) + 1);
+		strcpy(sem_error[countSemError], msg);
+		countSemError++;
+	}
 }
 ;
 
@@ -298,6 +334,7 @@ expression: expression arithmetic expression
 | value
 {
 	$$.nd = mknode($1.nd, NULL, "value");
+	strcpy($$.type, $1.type);
 }
 | '(' expression ')'
 {
@@ -343,17 +380,17 @@ comparator: TOKEN_MENOR_IGUAL { $$.nd = mknode(NULL, NULL, "comparator"); }
 | TOKEN_OR { $$.nd = mknode(NULL, NULL, "comparator"); }
 ;
 
-valueType:	TOKEN_INT { insert_type(); }
-| TOKEN_FLOAT { add('K'); insert_type(); }
-| TOKEN_CHAR { add('K'); insert_type(); }
-| TOKEN_STR { add('K'); insert_type(); }
-| TOKEN_VOID { add('K'); insert_type(); }
+valueType:	TOKEN_INT { add('K'); insert_type(); strcpy($$.type, "int");}
+| TOKEN_FLOAT { add('K'); insert_type(); strcpy($$.type, "float");}
+| TOKEN_CHAR { add('K'); insert_type(); strcpy($$.type, "char");}
+| TOKEN_STR { add('K'); insert_type(); strcpy($$.type, "str");}
+| TOKEN_VOID { add('K'); insert_type(); strcpy($$.type, "void"); }
 ;
 
-value: TOKEN_INT_NUM { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); }
-| TOKEN_FLOAT_NUM { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); }
-| TOKEN_CHAR_VAL { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); }
-| TOKEN_STR_VAL { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); }
+value: TOKEN_INT_NUM { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "int");}
+| TOKEN_FLOAT_NUM { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "float");}
+| TOKEN_CHAR_VAL { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "char");}
+| TOKEN_STR_VAL { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "str");}
 | TOKEN_VAR_ID { } { $$.nd = mknode(NULL, NULL, "variable"); }
 | functionCall { $$.nd = mknode($1.nd, NULL, "functionCall"); }
 | methodCall { $$.nd = mknode($1.nd, NULL, "methodCall"); }
@@ -362,6 +399,7 @@ value: TOKEN_INT_NUM { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); }
 return: TOKEN_RETURN { add('K'); error_msg="Sem valor pra retorno";} value { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode($3.nd, NULL, "return");
+	strcpy($$.type, $3.type);
 }
 | {$$.nd = NULL;}
 ;
@@ -411,6 +449,17 @@ int main(int argc, char **argv) {
 			printtree(trees[i]); 
 			printf("\n\n");
 		}
+		printf("\n\n");
+		printf("\t\t\t\t PHASE 3: SEMANTIC ANALYSIS \n\n");
+		if(countSemError == 0){
+			printf("Sem erros semânticos\n");
+		}
+		else{
+			for(int j = 0; j < countSemError; j++){
+				printf("\n%d Erro semântico: %s", j+1, sem_error[j]);
+			}
+		}
+		printf("\n\n");
 		printf("\n----------------------- FIM DA COMPILACAO\n");
 
 }
@@ -512,9 +561,28 @@ void insert_type() {
 	strcpy(type, yytext);
 }
 
+char *get_type(char *var){
+	for(int i=0; i<count; i++) {
+		if(!strcmp(symbolTable[i].id_name, var)) {
+			return symbolTable[i].data_type;
+		}
+	}
+}
+
+int check_types(char *type1, char *type2){
+	// declaration with no init
+	if(!strcmp(type2, "null"))
+		return -1;
+	// both datatypes are same
+	if(!strcmp(type1, type2))
+		return 0;
+	// both datatypes are different
+	return 1;
+}
+
 void yyerror(const char* msg) {
-	if(count_error == 0){
+	if(countSinError == 0){
     	fprintf(stderr, "Erro de sintaxe na linha %d: (%s)\n", countn, error_msg);
-		count_error++;
+		countSinError++;
 	}
 }
