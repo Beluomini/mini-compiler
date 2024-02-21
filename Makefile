@@ -23,4 +23,4 @@ compiling :
 
 running :
 	@echo "\n-> running..."
-	@./a.out $(TEST_FILE) $(TEST_FILE2)
+	@./a.out $(TEST_FILE2) $(TEST_FILE)

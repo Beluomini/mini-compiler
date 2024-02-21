@@ -5,8 +5,10 @@ classe Carro {
     inteiro capo = 1;
 
     metodo palavra anda(){
+        escreve("teste\n");
+        escaneia(capo);
         repete(a<4){
-            roda = roda + 4;
+            roda = 2 + 4;
         }
         inteiro[3] pecas = {1, 3, 4};
         pecas[2] = 1;

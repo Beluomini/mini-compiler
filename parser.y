@@ -29,7 +29,12 @@
     int q;
     char type[10];
     extern int countn;
-    struct node *head;
+	char *error_msg = "Erro de sintático não reconhecido";
+	int count_error = 0;
+
+	char *scan_data;
+    
+	struct node *head;
     struct node { 
 	struct node *left; 
 	struct node *right; 
@@ -84,17 +89,17 @@ headers: header headers { $$.nd = mknode($1.nd, $2.nd, "headers"); }
 | {$$.nd = NULL;}
 ;
 
-header: TOKEN_INCLUDE TOKEN_LIB
+header: TOKEN_INCLUDE { error_msg="Incluir vazio"; } TOKEN_LIB
 { 
 	add('H'); 
-	$$.nd = mknode(NULL, NULL, $2.name); 
+	$$.nd = mknode(NULL, NULL, $3.name); 
 }
 ;
 
-body: structs main '(' ')' '{'  actions return '}'
+body: structs { error_msg="Erro na função main"; } main '(' ')' { error_msg="Faltando '{'"; } '{'  actions return { error_msg="Faltando '}'"; }'}'
 { 
-	$2.nd = mknode($6.nd, $7.nd, "main");
-    $$.nd = mknode($1.nd, $2.nd, "body"); 
+	$3.nd = mknode($8.nd, $9.nd, "main");
+    $$.nd = mknode($1.nd, $3.nd, "body"); 
 }
 ;
 
@@ -122,9 +127,9 @@ classes: class classes
 | {$$.nd = NULL;}
 ;
 
-class: TOKEN_CLASS TOKEN_CLASS_ID { add('G'); } '{' actions methods '}'
+class: TOKEN_CLASS { error_msg="Classes tem que ter um nome"; }  TOKEN_CLASS_ID { add('G'); } { error_msg="Faltando '{'"; } '{' actions methods { error_msg="Faltando '}'"; }'}'
 {
-	$$.nd = mknode($5.nd, $6.nd, "class");
+	$$.nd = mknode($7.nd, $8.nd, "class");
 }
 ;
 
@@ -135,15 +140,15 @@ methods: method methods
 | {$$.nd = NULL;}
 ;
 
-method: TOKEN_START_METHOD { add('K'); } valueType TOKEN_VAR_ID { add('M'); } '(' params ')' '{' actions return '}'
+method: TOKEN_START_METHOD { add('K'); error_msg="Tipo faltando"; } valueType {error_msg="Metodo deve ter um nome"; }TOKEN_VAR_ID { error_msg="Faltando '('"; } '(' params {error_msg="Faltando ')'";} ')'  {error_msg="Faltando '{'";} '{' actions {error_msg="Metodo sem retorno";} return {error_msg="Faltando '}'";} '}'
 {
-	$$.nd = mknode($7.nd, $10.nd, "method");
+	$$.nd = mknode($8.nd, $13.nd, "method");
 }
 ;
 
-methodCall: TOKEN_CLASS_ID '.' TOKEN_VAR_ID '(' params ')'
+methodCall: TOKEN_CLASS_ID '.' TOKEN_VAR_ID { error_msg="Faltando '('"; } '(' params { error_msg="Faltando ')'"; } ')'
 {
-	$$.nd = mknode($5.nd, NULL, "methodCall");
+	$$.nd = mknode($6.nd, NULL, "methodCall");
 }
 ;
 
@@ -153,21 +158,21 @@ functions: function functions
 }
 | {$$.nd = NULL;}
 
-function: TOKEN_START_FUNC { add('K'); } valueType TOKEN_VAR_ID { add('F'); } '(' params ')' '{' actions return '}'
+function: TOKEN_START_FUNC { add('K'); error_msg="Tipo faltando"; } valueType {error_msg="Função deve ter um nome"; } TOKEN_VAR_ID { add('F'); error_msg="Faltando '('";} '(' params {error_msg="Faltando ')'";} ')' {error_msg="Faltando '{'";} '{' actions return {error_msg="Faltando '}'";} '}'
 {
-	$$.nd = mknode($7.nd, $10.nd, "function");
+	$$.nd = mknode($8.nd, $13.nd, "function");
 }
 ;
 
-functionCall: TOKEN_VAR_ID '(' params ')'
+functionCall: TOKEN_VAR_ID { error_msg="Faltando '('"; } '(' params { error_msg="Faltando ')'"; } ')'
 {
-	$$.nd = mknode($3.nd, NULL, "functionCall");
+	$$.nd = mknode($4.nd, NULL, "functionCall");
 }
 ;
 
-params: param ',' params
+params: { error_msg="Params are incorrect"; } param ',' params
 {
-	$$.nd = mknode($1.nd, $3.nd, "params");
+	$$.nd = mknode($2.nd, $4.nd, "params");
 }
 | {$$.nd = NULL;}
 ;
@@ -201,56 +206,56 @@ startIf: TOKEN_IF { add('K'); } if else
 }
 ;
 
-if: '(' comparation ')' '{' actions '}'
+if: { error_msg="Faltando '('"; } '(' comparation { error_msg="Faltando ')'"; } ')' { error_msg="Faltando '{'"; } '{' actions { error_msg="Faltando '}'"; } '}'
 {
-	$$.nd = mknode($2.nd, $5.nd, "if");
+	$$.nd = mknode($3.nd, $8.nd, "if");
 }
 ;
 
-else: TOKEN_ELSE { add('K'); } '{' actions '}'
+else: TOKEN_ELSE { add('K');  error_msg="Faltando '{'";} '{' actions { error_msg="Faltando '}'";} '}'
 {
 	$$.nd = mknode($4.nd, NULL, "else");
 }
 | {$$.nd = NULL;}
 ;
 
-loop: TOKEN_WHILE { add('K'); } '(' comparation ')' '{' actions '}'
+loop: TOKEN_WHILE { add('K'); error_msg="Faltando '('";} '(' comparation { error_msg="Faltando ')'";} ')' { error_msg="Faltando '{'";} '{' actions { error_msg="Faltando '}'";} '}'
 {
-	$$.nd = mknode($4.nd, $7.nd, "loop");
+	$$.nd = mknode($4.nd, $9.nd, "loop");
 }
 ;
 
-print: TOKEN_PRINTF { add('K'); } '(' value ')' ';'
+print: TOKEN_PRINTF { add('K');  error_msg="Faltando '('";} '(' value {error_msg="Faltando ')'";} ')' {error_msg="Faltando ';'";} ';'
 {
 	$$.nd = mknode($4.nd, NULL, "print");
 }
 ;
 
-scan: TOKEN_SCANF { add('K'); } '(' TOKEN_VAR_ID ')' ';'
+scan: TOKEN_SCANF { add('K'); error_msg="Faltando '('";} '(' TOKEN_VAR_ID {error_msg=("Faltando ')'");} ')' {error_msg=("Faltando ';'");} ';'
 {
 	$$.nd = mknode(NULL, NULL, "scan");
 }
 ;
 
-vectorDefinition: valueType '[' TOKEN_INT_NUM ']' TOKEN_VAR_ID { add('V'); } '=' '{' vectorData '}' ';'
+vectorDefinition: valueType '[' TOKEN_INT_NUM {error_msg=("Vetor definido incorretamente");} ']' TOKEN_VAR_ID { add('V'); } '=' '{' vectorData '}' { error_msg="Missing ';'"; } ';'
 {
-	$$.nd = mknode($9.nd, NULL, "vectorDefinition");
+	$$.nd = mknode($10.nd, NULL, "vectorDefinition");
 }
 ;
 
-vectorValueAssignment: TOKEN_VAR_ID '[' TOKEN_INT_NUM ']' '=' value ';'
+vectorValueAssignment: TOKEN_VAR_ID '[' TOKEN_INT_NUM ']' '=' value { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode($6.nd, NULL, "vectorValueAssignment");
 }
-| TOKEN_VAR_ID '[' TOKEN_INT_NUM ']' '=' functionCall ';'
+| TOKEN_VAR_ID '[' TOKEN_INT_NUM ']' '=' functionCall { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode(NULL, NULL, "vectorValueAssignment");
 }
-| TOKEN_VAR_ID '[' TOKEN_INT_NUM ']' '=' methodCall ';'
+| TOKEN_VAR_ID '[' TOKEN_INT_NUM ']' '=' methodCall { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode(NULL, NULL, "vectorValueAssignment");
 }
-| TOKEN_VAR_ID '['']' '=' vectorData ';'
+| TOKEN_VAR_ID '['']' '=' vectorData { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode($5.nd, NULL, "vectorValueAssignment");
 }
@@ -266,21 +271,21 @@ vectorData: value ',' vectorData
 }
 ;
 
-variableDefinition: valueType TOKEN_VAR_ID { add('V'); } '=' expression ';'
+variableDefinition: valueType TOKEN_VAR_ID { add('V'); } '=' expression { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode($5.nd, NULL, "variableDefinition");
 }
 ;
 
-variableAssignment: TOKEN_VAR_ID '=' expression ';' 
+variableAssignment: TOKEN_VAR_ID '=' expression { error_msg="Missing ';'"; } ';' 
 {
 	$$.nd = mknode($3.nd, NULL, "variableAssignment");
 }
-| TOKEN_VAR_ID '=' functionCall ';'
+| TOKEN_VAR_ID '=' functionCall { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode($3.nd, NULL, "variableAssignment");
 }
-| TOKEN_VAR_ID '=' methodCall ';'
+| TOKEN_VAR_ID '=' methodCall { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode($3.nd, NULL, "variableAssignment");
 }
@@ -291,6 +296,19 @@ expression: expression arithmetic expression
 	$$.nd = mknode($1.nd, $3.nd, "expression");
 }
 | value
+{
+	$$.nd = mknode($1.nd, NULL, "value");
+}
+| '(' expression ')'
+{
+	$$.nd = mknode($2.nd, NULL, "expression");
+}
+;
+
+arithmetic: TOKEN_ADD { $$.nd = mknode(NULL, NULL, "arithmetic"); }
+| TOKEN_SUB { $$.nd = mknode(NULL, NULL, "arithmetic"); }
+| TOKEN_MULT { $$.nd = mknode(NULL, NULL, "arithmetic"); }
+| TOKEN_DIV { $$.nd = mknode(NULL, NULL, "arithmetic"); }
 ;
 
 comparation: comparation comparator comparation
@@ -309,6 +327,10 @@ comparation: comparation comparator comparation
 {
 	$$.nd = mknode(NULL, NULL, "comparation");
 }
+| '(' comparation ')'
+{
+	$$.nd = mknode($2.nd, NULL, "comparation");
+}
 ;
 
 comparator: TOKEN_MENOR_IGUAL { $$.nd = mknode(NULL, NULL, "comparator"); }
@@ -319,12 +341,6 @@ comparator: TOKEN_MENOR_IGUAL { $$.nd = mknode(NULL, NULL, "comparator"); }
 | TOKEN_DIFERENTE { $$.nd = mknode(NULL, NULL, "comparator"); }
 | TOKEN_AND { $$.nd = mknode(NULL, NULL, "comparator"); }
 | TOKEN_OR { $$.nd = mknode(NULL, NULL, "comparator"); }
-;
-
-arithmetic: TOKEN_ADD { $$.nd = mknode(NULL, NULL, "arithmetic"); }
-| TOKEN_SUB { $$.nd = mknode(NULL, NULL, "arithmetic"); }
-| TOKEN_MULT { $$.nd = mknode(NULL, NULL, "arithmetic"); }
-| TOKEN_DIV { $$.nd = mknode(NULL, NULL, "arithmetic"); }
 ;
 
 valueType:	TOKEN_INT { insert_type(); }
@@ -343,7 +359,7 @@ value: TOKEN_INT_NUM { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); }
 | methodCall { $$.nd = mknode($1.nd, NULL, "methodCall"); }
 ;
 
-return: TOKEN_RETURN { add('K'); } value ';'
+return: TOKEN_RETURN { add('K'); error_msg="Sem valor pra retorno";} value { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode($3.nd, NULL, "return");
 }
@@ -389,11 +405,8 @@ int main(int argc, char **argv) {
 			free(symbolTable[i].type);
 		}
 		printf("\n\n");
-		printf("\t\t\t\t PHASE 2: SYNTAX ANALYSIS FILE %s \n\n", fileNames[1]);
-		printtree(trees[1]); 
-		printf("\n\n");
-
-		for (int i = 2; i < argc; i++) {
+		printf("\t\t\t\t PHASE 2: SYNTAX ANALYSIS \n\n");
+		for (int i = 1; i < argc; i++) {
 			printf("\t\t\t\t FILE %s SYNTAX ANALYSIS \n\n", fileNames[i]);
 			printtree(trees[i]); 
 			printf("\n\n");
@@ -500,5 +513,8 @@ void insert_type() {
 }
 
 void yyerror(const char* msg) {
-    fprintf(stderr, "%s\n", msg);
+	if(count_error == 0){
+    	fprintf(stderr, "Erro de sintaxe na linha %d: (%s)\n", countn, error_msg);
+		count_error++;
+	}
 }
