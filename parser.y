@@ -16,6 +16,7 @@
     void printtree(struct node*);
     void printInorder(struct node *);
 
+	void check_declaration(char *);
 	int check_types(char *, char *);
 	char *get_type(char *);
 
@@ -36,6 +37,10 @@
 	int countSinError = 0;
 	char *sem_error[100];
 	int countSemError = 0;
+	char reservedWords[20][20] = {
+		"acao", "metodo", "escreve", "escaneia",
+		"inteiro", "decimal", "caracter", "classe", "vazio", 
+		"palavra", "retorna", "se", "senao", "enquanto"};
 
 	char *scan_data;
 
@@ -264,7 +269,7 @@ scan: TOKEN_SCANF { add('K'); error_msg="Faltando '('";} '(' TOKEN_VAR_ID {error
 }
 ;
 
-vectorDefinition: valueType '[' TOKEN_INT_NUM {error_msg=("Vetor definido incorretamente");} ']' TOKEN_VAR_ID { add('V'); } '=' '{' vectorData '}' { error_msg="Missing ';'"; } ';'
+vectorDefinition: valueType '[' TOKEN_INT_NUM {error_msg=("Vetor definido incorretamente");} ']' TOKEN_VAR_ID { add('L'); } '=' '{' vectorData '}' { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode($10.nd, NULL, "vectorDefinition");
 }
@@ -273,18 +278,22 @@ vectorDefinition: valueType '[' TOKEN_INT_NUM {error_msg=("Vetor definido incorr
 vectorValueAssignment: TOKEN_VAR_ID '[' TOKEN_INT_NUM ']' '=' value { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode($6.nd, NULL, "vectorValueAssignment");
+	check_declaration($1.name);
 }
 | TOKEN_VAR_ID '[' TOKEN_INT_NUM ']' '=' functionCall { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode(NULL, NULL, "vectorValueAssignment");
+	check_declaration($1.name);
 }
 | TOKEN_VAR_ID '[' TOKEN_INT_NUM ']' '=' methodCall { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode(NULL, NULL, "vectorValueAssignment");
+	check_declaration($1.name);
 }
 | TOKEN_VAR_ID '['']' '=' vectorData { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode($5.nd, NULL, "vectorValueAssignment");
+	check_declaration($1.name);
 }
 ;
 
@@ -316,14 +325,17 @@ variableDefinition: valueType TOKEN_VAR_ID { strcpy($2.name, yytext); add('V'); 
 variableAssignment: TOKEN_VAR_ID '=' expression { error_msg="Missing ';'"; } ';' 
 {
 	$$.nd = mknode($3.nd, NULL, "variableAssignment");
+	check_declaration($1.name);
 }
 | TOKEN_VAR_ID '=' functionCall { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode($3.nd, NULL, "variableAssignment");
+	check_declaration($1.name);
 }
 | TOKEN_VAR_ID '=' methodCall { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode($3.nd, NULL, "variableAssignment");
+	check_declaration($1.name);
 }
 ;
 
@@ -476,6 +488,19 @@ int search(char *type) {
 }
 
 void add(char c) {
+	if(c=='V' || c=='F' || c=='M' || c=='L') {
+		for (int i = 0; i < 20; i++) {
+			if(strcmp(strdup(yytext), reservedWords[i]) == 0) {
+				char msg[100] = "";
+				strcat(msg, "Palavra reservada: ");
+				strcat(msg, yytext);
+				sem_error[countSemError] = (char *)malloc(strlen(msg) + 1);
+				strcpy(sem_error[countSemError], msg);
+				countSemError++;
+				return;
+			}
+		}
+	}
     q=search(yytext);
 	if(q==0) {
 		if(c=='H') {
@@ -527,7 +552,22 @@ void add(char c) {
 			symbolTable[count].type=strdup("Method\t");
 			count++;
 		}
+		else if(c=='L') {
+			symbolTable[count].id_name=strdup(yytext);
+			symbolTable[count].data_type=strdup(type);
+			symbolTable[count].line_no=countn;
+			symbolTable[count].type=strdup("Vetor\t");
+			count++;
+		}
     }
+	else if((c == 'V' && q) || (c == 'G' && q) || (c == 'F' && q) || (c == 'M' && q )|| (c == 'L' && q)) {
+		char msg[100] = "";
+		strcat(msg, "Multiplas declarações: ");
+		strcat(msg, yytext);
+		sem_error[countSemError] = (char *)malloc(strlen(msg) + 1);
+		strcpy(sem_error[countSemError], msg);
+		countSemError++;
+	}
 }
 
 struct node* mknode(struct node *left, struct node *right, char *token) {	
@@ -567,6 +607,18 @@ char *get_type(char *var){
 			return symbolTable[i].data_type;
 		}
 	}
+}
+
+void check_declaration(char *c) {    
+    q = search(c);    
+    if(!q) {        
+        char msg[100] = "";
+		strcat(msg, "Variável não declarada: ");
+		strcat(msg, c);
+		sem_error[countSemError] = (char *)malloc(strlen(msg) + 1);
+		strcpy(sem_error[countSemError], msg);
+		countSemError++;  
+    }
 }
 
 int check_types(char *type1, char *type2){
