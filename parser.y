@@ -507,11 +507,11 @@ int main(int argc, char **argv) {
 			free(symbolTable[i].type);
 		}
 		printf("\n\n");
-		printf("\t\t\t\t PHASE 2: SYNTAX ANALYSIS \n\n");
+		printf("\t\t\t\t PHASE 2: SYNTAX ANALYSIS ");
+		printf("\n\n");
 		for (int i = 1; i < argc; i++) {
-			printf("\t\t\t\t FILE %s SYNTAX ANALYSIS \n\n", fileNames[i]);
+			printf("\t\t\t\t FILE %s SYNTAX ANALYSIS \n", fileNames[i]);
 			printtree(trees[i]); 
-			printf("\n\n");
 		}
 		printf("\n\n");
 		printf("\t\t\t\t PHASE 3: SEMANTIC ANALYSIS \n\n");
