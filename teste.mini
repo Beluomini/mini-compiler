@@ -5,7 +5,7 @@ classe Carro {
     inteiro capo = 1;
 
     metodo palavra anda(){
-        enquanto(a<4){
+        enquanto(capo < 4){
             roda = 2 + 4;
         }
 
@@ -23,11 +23,12 @@ acao inteiro printscan(){
 
 vazio main(){
     palavra dentro = "oi";
+    inteiro b = 1;
 
-    se(b==5){
+    se(printscan() == 5){
         dentro = "tchau";
     }
-    se(c<=2){
+    se(Carro.capo <= 2){
         roda = 3;
     }senao{
         roda = 4;

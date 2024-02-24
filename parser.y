@@ -71,7 +71,7 @@
 					TOKEN_INCLUDE TOKEN_LIB TOKEN_RETURN
 
 %type	<nd_obj>	file program headers body header main
-					structs struct classes class methods method methodCall
+					structs struct classes class methods method methodCall methodVariableCall
 					functions function functionCall params param actions action
 					variableDefinition variableAssignment loop print scan
 					startIf if else comparation comparator
@@ -151,7 +151,7 @@ methods: method methods
 | {$$.nd = NULL;}
 ;
 
-method: TOKEN_START_METHOD { add('K'); error_msg="Tipo faltando"; } valueType {error_msg="Metodo deve ter um nome"; }TOKEN_VAR_ID { strcpy($5.name, yytext); error_msg="Faltando '('"; } '(' params {error_msg="Faltando ')'";} ')'  {error_msg="Faltando '{'";} '{' actions {error_msg="Metodo sem retorno";} return {error_msg="Faltando '}'";} '}'
+method: TOKEN_START_METHOD { add('K'); error_msg="Tipo faltando"; } valueType {error_msg="Metodo deve ter um nome"; }TOKEN_VAR_ID { add('M'); strcpy($5.name, yytext); strcpy($5.type, $3.type); error_msg="Faltando '('"; } '(' params {error_msg="Faltando ')'";} ')'  {error_msg="Faltando '{'";} '{' actions {error_msg="Metodo sem retorno";} return {error_msg="Faltando '}'";} '}'
 {
 	$$.nd = mknode($8.nd, $13.nd, "method");
 	if(strcmp($3.type, $15.type) != 0) {
@@ -173,6 +173,14 @@ methodCall: TOKEN_CLASS_ID '.' TOKEN_VAR_ID { error_msg="Faltando '('"; } '(' pa
 }
 ;
 
+methodVariableCall: TOKEN_CLASS_ID '.' TOKEN_VAR_ID
+{
+	$$.nd = mknode(NULL, NULL, "methodVariableCall");
+	char *type = get_type($3.name);
+	strcpy($$.type, type);
+}
+;
+
 functions: function functions
 {
 	$$.nd = mknode($1.nd, $2.nd, "functions");
@@ -180,7 +188,7 @@ functions: function functions
 | {$$.nd = NULL;}
 ;
 
-function: TOKEN_START_FUNC { add('K'); error_msg="Tipo faltando"; } valueType {error_msg="Função deve ter um nome"; } TOKEN_VAR_ID { strcpy($5.name,yytext); add('F'); error_msg="Faltando '('";} '(' params {error_msg="Faltando ')'";} ')' {error_msg="Faltando '{'";} '{' actions return {error_msg="Faltando '}'";} '}'
+function: TOKEN_START_FUNC { add('K'); error_msg="Tipo faltando"; } valueType {error_msg="Função deve ter um nome"; } TOKEN_VAR_ID { strcpy($5.name,yytext); strcpy($5.type, $3.type); add('F'); error_msg="Faltando '('";} '(' params {error_msg="Faltando ')'";} ')' {error_msg="Faltando '{'";} '{' actions return {error_msg="Faltando '}'";} '}'
 {
 	$$.nd = mknode($8.nd, $13.nd, "function");
 	if(strcmp($3.type, $14.type) != 0) {
@@ -269,10 +277,17 @@ scan: TOKEN_SCANF { add('K'); error_msg="Faltando '('";} '(' TOKEN_VAR_ID {error
 }
 ;
 
-vectorDefinition: valueType '[' TOKEN_INT_NUM {error_msg=("Vetor definido incorretamente");} ']' TOKEN_VAR_ID { add('L'); } '=' '{' vectorData '}' { error_msg="Missing ';'"; } ';'
+vectorDefinition: valueType '[' TOKEN_INT_NUM { add('C'); error_msg=("Vetor definido incorretamente");} ']' TOKEN_VAR_ID { add('L'); } '=' '{' vectorData '}' { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode($10.nd, NULL, "vectorDefinition");
 }
+;
+
+vectorData: value ',' vectorData
+{
+	$$.nd = mknode($1.nd, $3.nd, "vectorData");
+}
+| value
 ;
 
 vectorValueAssignment: TOKEN_VAR_ID '[' TOKEN_INT_NUM ']' '=' value { error_msg="Missing ';'"; } ';'
@@ -297,16 +312,6 @@ vectorValueAssignment: TOKEN_VAR_ID '[' TOKEN_INT_NUM ']' '=' value { error_msg=
 }
 ;
 
-vectorData: value ',' vectorData
-{
-	$$.nd = mknode($1.nd, $3.nd, "vectorData");
-}
-| value
-{
-	$$.nd = mknode($1.nd, NULL, "vectorData");
-}
-;
-
 variableDefinition: valueType TOKEN_VAR_ID { strcpy($2.name, yytext); add('V'); } '=' expression { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode($5.nd, NULL, "variableDefinition");
@@ -319,6 +324,8 @@ variableDefinition: valueType TOKEN_VAR_ID { strcpy($2.name, yytext); add('V'); 
 		strcpy(sem_error[countSemError], msg);
 		countSemError++;
 	}
+	strcpy($$.type, $1.type);
+	strcpy($2.type, $1.type);
 }
 ;
 
@@ -345,7 +352,6 @@ expression: expression arithmetic expression
 }
 | value
 {
-	$$.nd = mknode($1.nd, NULL, "value");
 	strcpy($$.type, $1.type);
 }
 | '(' expression ')'
@@ -363,22 +369,67 @@ arithmetic: TOKEN_ADD { $$.nd = mknode(NULL, NULL, "arithmetic"); }
 comparation: comparation comparator comparation
 {
 	$$.nd = mknode($1.nd, $3.nd, "comparation");
+	int check = check_types($1.type, $3.type);
+	if(check == 1) {
+		char msg[100] = "";
+		strcat(msg, "Comparação de tipos diferentes: ");
+		strcat(msg, $1.type);
+		sem_error[countSemError] = (char *)malloc(strlen(msg) + 1);
+		strcpy(sem_error[countSemError], msg);
+		countSemError++;
+	}
+	strcpy($$.type, $1.type);
 }
 | comparation comparator value
 {
 	$$.nd = mknode($1.nd, NULL, "comparation");
+	int check = check_types($1.type, $3.type);
+	if(check == 1) {
+		char msg[100] = "";
+		strcat(msg, "Comparação de tipos diferentes: ");
+		strcat(msg, $1.type);
+		sem_error[countSemError] = (char *)malloc(strlen(msg) + 1);
+		strcpy(sem_error[countSemError], msg);
+		countSemError++;
+	}
+	strcpy($$.type, $3.type);
 }
 | value comparator comparation
 {
 	$$.nd = mknode(NULL, $3.nd, "comparation");
+	int check = check_types($1.type, $3.type);
+	if(check == 1) {
+		char msg[100] = "";
+		strcat(msg, "Comparação de tipos diferentes: ");
+		strcat(msg, $1.type);
+		sem_error[countSemError] = (char *)malloc(strlen(msg) + 1);
+		strcpy(sem_error[countSemError], msg);
+		countSemError++;
+	}
+	strcpy($$.type, $1.type);
 }
 | value comparator value
 {
-	$$.nd = mknode(NULL, NULL, "comparation");
+	$$.nd = mknode(NULL, NULL, "comparation");int check = check_types($1.type, $3.type);
+	if(check == 1) {
+		char msg[100] = "";
+		strcat(msg, "Comparação de tipos diferentes: ");
+		strcat(msg, $1.type);
+		sem_error[countSemError] = (char *)malloc(strlen(msg) + 1);
+		strcpy(sem_error[countSemError], msg);
+		countSemError++;
+	}
+	strcpy($$.type, $1.type);
 }
 | '(' comparation ')'
 {
 	$$.nd = mknode($2.nd, NULL, "comparation");
+	strcpy($$.type, $2.type);
+}
+| value
+{
+	$$.nd = mknode($1.nd, NULL, "comparation");
+	strcpy($$.type, $1.type);
 }
 ;
 
@@ -392,20 +443,21 @@ comparator: TOKEN_MENOR_IGUAL { $$.nd = mknode(NULL, NULL, "comparator"); }
 | TOKEN_OR { $$.nd = mknode(NULL, NULL, "comparator"); }
 ;
 
-valueType:	TOKEN_INT { add('K'); insert_type(); strcpy($$.type, "int");}
-| TOKEN_FLOAT { add('K'); insert_type(); strcpy($$.type, "float");}
-| TOKEN_CHAR { add('K'); insert_type(); strcpy($$.type, "char");}
-| TOKEN_STR { add('K'); insert_type(); strcpy($$.type, "str");}
-| TOKEN_VOID { add('K'); insert_type(); strcpy($$.type, "void"); }
+valueType:	TOKEN_INT { add('K'); insert_type(); strcpy($$.type, "inteiro");}
+| TOKEN_FLOAT { add('K'); insert_type(); strcpy($$.type, "decimal");}
+| TOKEN_CHAR { add('K'); insert_type(); strcpy($$.type, "caracter");}
+| TOKEN_STR { add('K'); insert_type(); strcpy($$.type, "palavra");}
+| TOKEN_VOID { add('K'); insert_type(); strcpy($$.type, "vazio"); }
 ;
 
-value: TOKEN_INT_NUM { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "int");}
-| TOKEN_FLOAT_NUM { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "float");}
-| TOKEN_CHAR_VAL { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "char");}
-| TOKEN_STR_VAL { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "str");}
-| TOKEN_VAR_ID { } { $$.nd = mknode(NULL, NULL, "variable"); }
-| functionCall { $$.nd = mknode($1.nd, NULL, "functionCall"); }
-| methodCall { $$.nd = mknode($1.nd, NULL, "methodCall"); }
+value: TOKEN_INT_NUM { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "inteiro");}
+| TOKEN_FLOAT_NUM { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "decimal");}
+| TOKEN_CHAR_VAL { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "caracter");}
+| TOKEN_STR_VAL { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "palavra");}
+| TOKEN_VAR_ID { strcpy($$.type, get_type($1.name)); check_declaration($1.name); $$.nd = mknode(NULL, NULL, "variable"); }
+| methodVariableCall { strcpy($$.type, $1.type); check_declaration($1.name); $$.nd = mknode($1.nd, NULL, "methodVariableCall"); }
+| functionCall { check_declaration($1.name); $$.nd = mknode($1.nd, NULL, "functionCall"); }
+| methodCall { strcpy($$.type, $1.type); check_declaration($1.name); $$.nd = mknode($1.nd, NULL, "methodCall"); }
 ;
 
 return: TOKEN_RETURN { add('K'); error_msg="Sem valor pra retorno";} value { error_msg="Missing ';'"; } ';'
@@ -610,7 +662,7 @@ char *get_type(char *var){
 }
 
 void check_declaration(char *c) {    
-    q = search(c);    
+    q = search(c);  
     if(!q) {        
         char msg[100] = "";
 		strcat(msg, "Variável não declarada: ");
