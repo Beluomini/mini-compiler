@@ -19,6 +19,11 @@
 	void check_declaration(char *);
 	int check_types(char *, char *);
 	char *get_type(char *);
+	void addTempVar(char *);
+	int searchVar(char *);
+
+	void addQuad(char *, char *, char *, char *);
+	void codeGen();
 
     struct node* mknode(struct node *left, struct node *right, char *token);
 
@@ -28,6 +33,13 @@
         char * type;
         int line_no;
     } symbolTable[40];
+
+	struct quadruple{
+		char *op;
+		char *arg1;
+		char *arg2;
+		char *result;
+	} quad[100];
 
     int count=0;
     int q;
@@ -41,6 +53,9 @@
 		"acao", "metodo", "escreve", "escaneia",
 		"inteiro", "decimal", "caracter", "classe", "vazio", 
 		"palavra", "retorna", "se", "senao", "enquanto"};
+
+	int temp_var_count = 0;
+	char temp_var[100][100];
 
 	char *scan_data;
 
@@ -56,6 +71,7 @@
 	struct var_name { 
 		char name[100]; 
 		char type[100];
+		char value[100];
 		struct node* nd;
 	} nd_obj; 
 } 
@@ -326,6 +342,14 @@ variableDefinition: valueType TOKEN_VAR_ID { strcpy($2.name, yytext); add('V'); 
 	}
 	strcpy($$.type, $1.type);
 	strcpy($2.type, $1.type);
+	char str[5],str1[5]="t";
+    sprintf(str, "%d", temp_var_count);       
+	strcat(str1,str);
+	addQuad("=", $5.value, "-", str1);
+	addTempVar($2.name);
+    temp_var_count++;
+	strcpy($2.value, $5.value);
+	strcpy($$.value, $5.value);
 }
 ;
 
@@ -333,6 +357,15 @@ variableAssignment: TOKEN_VAR_ID '=' expression { error_msg="Missing ';'"; } ';'
 {
 	$$.nd = mknode($3.nd, NULL, "variableAssignment");
 	check_declaration($1.name);
+	
+	int index = searchVar($1.name);
+	char str[5],str1[5]="t";
+    sprintf(str, "%d", index);       
+	strcat(str1,str);
+
+	addQuad("=", $3.value, "-", str1);
+	strcpy($1.value, $3.value);
+	strcpy($$.value, $3.value);
 }
 | TOKEN_VAR_ID '=' functionCall { error_msg="Missing ';'"; } ';'
 {
@@ -349,21 +382,24 @@ variableAssignment: TOKEN_VAR_ID '=' expression { error_msg="Missing ';'"; } ';'
 expression: expression arithmetic expression
 {
 	$$.nd = mknode($1.nd, $3.nd, "expression");
+	char str[5],str1[5]="t";
+    sprintf(str, "%d", temp_var_count);       
+	strcat(str1,str);
+    temp_var_count++;
+	addQuad($2.value, $1.value, $3.value, str1);
+	strcpy($$.value, str1);
 }
 | value
 {
 	strcpy($$.type, $1.type);
-}
-| '(' expression ')'
-{
-	$$.nd = mknode($2.nd, NULL, "expression");
+	strcpy($$.value, $1.value);
 }
 ;
 
-arithmetic: TOKEN_ADD { $$.nd = mknode(NULL, NULL, "arithmetic"); }
-| TOKEN_SUB { $$.nd = mknode(NULL, NULL, "arithmetic"); }
-| TOKEN_MULT { $$.nd = mknode(NULL, NULL, "arithmetic"); }
-| TOKEN_DIV { $$.nd = mknode(NULL, NULL, "arithmetic"); }
+arithmetic: TOKEN_ADD { $$.nd = mknode(NULL, NULL, "arithmetic"); strcpy($$.value, yytext);}
+| TOKEN_SUB { $$.nd = mknode(NULL, NULL, "arithmetic"); strcpy($$.value, yytext);}
+| TOKEN_MULT { $$.nd = mknode(NULL, NULL, "arithmetic"); strcpy($$.value, yytext);}
+| TOKEN_DIV { $$.nd = mknode(NULL, NULL, "arithmetic"); strcpy($$.value, yytext);}
 ;
 
 comparation: comparation comparator comparation
@@ -450,11 +486,17 @@ valueType:	TOKEN_INT { add('K'); insert_type(); strcpy($$.type, "inteiro");}
 | TOKEN_VOID { add('K'); insert_type(); strcpy($$.type, "vazio"); }
 ;
 
-value: TOKEN_INT_NUM { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "inteiro");}
+value: TOKEN_INT_NUM { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "inteiro"); strcpy($$.value, yytext);}
 | TOKEN_FLOAT_NUM { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "decimal");}
 | TOKEN_CHAR_VAL { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "caracter");}
-| TOKEN_STR_VAL { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "palavra");}
-| TOKEN_VAR_ID { strcpy($$.type, get_type($1.name)); check_declaration($1.name); $$.nd = mknode(NULL, NULL, "variable"); }
+| TOKEN_STR_VAL { add('C'); } { $$.nd = mknode(NULL, NULL, "value"); strcpy($$.type, "palavra"); strcpy($$.value, yytext);}
+| TOKEN_VAR_ID { strcpy($$.type, get_type($1.name)); check_declaration($1.name); $$.nd = mknode(NULL, NULL, "variable"); 
+	int index = searchVar($1.name);
+	char str[5],str1[5]="t";
+    sprintf(str, "%d", index);       
+	strcat(str1,str);
+	strcpy($$.value, str1);
+}
 | methodVariableCall { strcpy($$.type, $1.type); check_declaration($1.name); $$.nd = mknode($1.nd, NULL, "methodVariableCall"); }
 | functionCall { check_declaration($1.name); $$.nd = mknode($1.nd, NULL, "functionCall"); }
 | methodCall { strcpy($$.type, $1.type); check_declaration($1.name); $$.nd = mknode($1.nd, NULL, "methodCall"); }
@@ -524,8 +566,48 @@ int main(int argc, char **argv) {
 			}
 		}
 		printf("\n\n");
+		printf("\t\t\t\t PHASE 4: CODE GENERATION \n\n");
+		codeGen();
+		printf("O código intermediário foi gerado com sucesso no arquivo intCode.txt\n");
+		printf("\n\n");
 		printf("\n----------------------- FIM DA COMPILACAO\n");
 
+}
+
+void addQuad(char *op, char *arg1, char *arg2, char *result) {
+	for(int i=0; i<100; i++) {
+		if(quad[i].op == NULL) {
+			quad[i].op = strdup(op);
+			quad[i].arg1 = strdup(arg1);
+			quad[i].arg2 = strdup(arg2);
+			quad[i].result = strdup(result);
+			break;
+		}
+	}
+}
+
+void codeGen() {
+	FILE *f = fopen("intCode.txt", "w");
+	fprintf(f, "OP \t ARG1 \t ARG2 \t RESULT\n");
+	for(int i=0; i<100; i++) {
+		if(quad[i].op != NULL) {
+			fprintf(f, "%s \t %s \t\t %s \t\t %s;\n", quad[i].op, quad[i].arg1, quad[i].arg2, quad[i].result);
+		}
+	}
+	fclose(f);
+}
+
+void addTempVar(char *var) {
+	strcpy(temp_var[temp_var_count], var);
+}
+
+int searchVar(char *var) {
+	for(int i=0; i<temp_var_count; i++) {
+		if(strcmp(temp_var[i], var) == 0) {
+			return i;
+		}
+	}
+	return -1;
 }
 
 int search(char *type) {

@@ -1,10 +1,14 @@
 classe Onibus {
-    inteiro catraca = 4;
+    inteiro nada = 1;
+    inteiro catraca = 2;
+    nada = 3;
+    catraca = 4;
+
+    inteiro teste = nada + 5;
 
     metodo inteiro rota(){
         inteiro[3] paradas = {1, 7, 8};
         paradas[2] = 1;
-        catraca = 4;
         retorna 1;
     }
 }
