@@ -2,6 +2,8 @@
 
 A OOP compiler for a mini language. Designed by Lucas Beluomini the compiler is written in C and uses the Flex and Bison tools to generate the lexical and syntax analyzers. The compiler is able to generate the assembly code for the mini language.
 
+This project was design to a subject at UEM by Lucas Beluomini RA 120111
+
 ## How to use
 
 To use the compiler you need to have the Flex and Bison tools installed in your machine. After that, you can use the following commands to compile the compiler:
