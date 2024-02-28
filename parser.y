@@ -567,8 +567,14 @@ int main(int argc, char **argv) {
 		}
 		printf("\n\n");
 		printf("\t\t\t\t PHASE 4: CODE GENERATION \n\n");
-		codeGen();
-		printf("O código intermediário foi gerado com sucesso no arquivo intCode.txt\n");
+		if(countSemError > 0){
+			printf("Erro semântico encontrado, não foi possível gerar o código intermediário\n");
+		}
+		else{
+			printf("Gerando código intermediário...\n");
+			codeGen();
+			printf("O código intermediário foi gerado com sucesso no arquivo intCode.txt\n");
+		}
 		printf("\n\n");
 		printf("\n----------------------- FIM DA COMPILACAO\n");
 
