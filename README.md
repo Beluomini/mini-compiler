@@ -26,10 +26,15 @@ make
 ## To-Do List ✅
 
 (X) Lexical Analysis
+
 (X) Syntax Analysis
+
 (-) Semantic Analysis
+
 ( ) Intermediate Code Generation
+
 ( ) Optimization
+
 ( ) Code Generation
 
 ## Bibliography 📖
