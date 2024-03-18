@@ -2,7 +2,7 @@
 
 A OOP compiler for a mini language. Designed by Lucas Beluomini the compiler is written in C and uses the Flex and Bison tools to generate the lexical and syntax analyzers. The compiler is able to generate the assembly code for the mini language.
 
-## How to use
+## How to use ▶️
 
 To use the compiler you need to have the Flex and Bison tools installed in your machine. After that, you can use the following commands to compile the compiler:
 
@@ -20,7 +20,16 @@ You can use the makefile to compile the compiler. The makefile will use the arch
 make
 ```
 
-## Bibliography
+## To-Do List ✅
+
+(X) Lexical Analysis
+(X) Syntax Analysis
+(-) Semantic Analysis
+( ) Intermediate Code Generation
+( ) Optimization
+( ) Code Generation
+
+## Bibliography 📖
 
 - [Bison](https://iq.opengenus.org/yacc-and-bison/#gsc.tab=0)
 - [Basic of Bison](https://www.gnu.org/software/bison/manual/html_node/Actions.html)
