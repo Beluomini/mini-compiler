@@ -5,7 +5,7 @@ A OOP compiler for a mini language. Designed by Lucas Beluomini the compiler is 
 This project was design to a subject at UEM by Lucas Beluomini RA 120111
 
 
-## How to use ▶️
+## ▶️ How to use 
 
 To use the compiler you need to have the Flex and Bison tools installed in your machine. After that, you can use the following commands to compile the compiler:
 
@@ -23,7 +23,7 @@ You can use the makefile to compile the compiler. The makefile will use the arch
 make
 ```
 
-## To-Do List ✅
+## ✅ To-Do List 
 
 (X) Lexical Analysis
 
@@ -37,7 +37,7 @@ make
 
 ( ) Code Generation
 
-## Bibliography 📖
+## 📖 Bibliography 
 
 - [Bison](https://iq.opengenus.org/yacc-and-bison/#gsc.tab=0)
 - [Basic of Bison](https://www.gnu.org/software/bison/manual/html_node/Actions.html)
